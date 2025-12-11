@@ -42,7 +42,7 @@ public class Terrain {
         }
     }
 
-    public getCase(int x,int y){
+    public int getCase(int x,int y){
         return terrain[x][y];
     }
 
