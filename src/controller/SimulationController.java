@@ -1,3 +1,8 @@
+package controller;
+
+import model.environment.Map;
+
+
 public class SimulationController {
     private final Map map;
     private final int width = 30,height = 30;
@@ -7,18 +12,18 @@ public class SimulationController {
         map = new Map(width,height);
 
         // Installation des anomalies
-        // De type Pollution
+        // De type model.environment.Pollution
         map.activeAnomaly(5,5, Map.CaseType.Pollution);
         map.activeAnomaly(6,5, Map.CaseType.Pollution);
         map.activeAnomaly(5,4, Map.CaseType.Pollution);
         map.activeAnomaly(3,5, Map.CaseType.Pollution);
 
-        // De type RestrictedArea
-        map.activeAnomaly(25,5, Map.CaseType.RestrictedArea);
+        // De type model.environment.RestrictedArea
+        map.activeAnomaly(2,5, Map.CaseType.RestrictedArea);
         map.activeAnomaly(25,6, Map.CaseType.RestrictedArea);
         map.activeAnomaly(25,7, Map.CaseType.RestrictedArea);
 
-        // De type Collapse
+        // De type model.environment.Collapse
         map.activeAnomaly(5,25, Map.CaseType.Collapse);
         map.activeAnomaly(6,25, Map.CaseType.Collapse);
         map.activeAnomaly(6,24, Map.CaseType.Collapse);
@@ -63,6 +68,6 @@ public class SimulationController {
             }
             System.out.println();
         }
-        System.out.println("--------------------------------------------------------------");
+        System.out.println("------------------------------------------------------------------------------");
     }
 }

@@ -1,5 +1,8 @@
-public class Pollution extends Anomaly {
-    public Pollution(int width, int height) {
+package model.environment;
+
+public class Collapse extends Anomaly {
+
+    public Collapse(int width,int height){
         super(width, height);
     }
 
@@ -9,7 +12,7 @@ public class Pollution extends Anomaly {
      *  - si 2 ou 3 voisins --> rien ne se passe
      *  - sinon disparait
      * Case non touché :
-     *  - si 3 voisins --> anomalie apparaît
+     *  - si 3 ou 4 voisins --> anomalie apparaît
      *  - sinon rien ne se passe
      */
     public void step(){
@@ -20,7 +23,7 @@ public class Pollution extends Anomaly {
                 if(grid[x][y]){
                     next[x][y] = neighbors == 2 || neighbors==3;
                 }else{
-                    next[x][y] = neighbors== 3;
+                    next[x][y] = neighbors== 3 || neighbors ==4;
                 }
             }
         }
@@ -28,9 +31,9 @@ public class Pollution extends Anomaly {
     }
 
     /**
-     * @return le type de l'anomalie, soit Pollution
+     * @return le type de l'anomalie, soit model.environment.Collapse
      */
     public Map.CaseType getType(){
-        return Map.CaseType.Pollution;
+        return Map.CaseType.Collapse;
     }
 }
