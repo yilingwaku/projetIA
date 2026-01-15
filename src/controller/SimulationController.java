@@ -1,76 +1,97 @@
 package controller;
 
-import model.environment.Map;
-import model.world.World;
+import model.center.ControlCenter;
 import model.drone.Drone;
+import model.environment.Map;
+import model.shared.Position;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
-
+/**
+ * Test console complet (sans UI).
+ */
 public class SimulationController {
-    private final Map map;
-    private final int width = 30,height = 30;
 
-    public SimulationController(){
-        // Création de la map
-        map = new Map(width,height);
+    private static final int WIDTH = 20;
+    private static final int HEIGHT = 20;
+    private static final int DRONE_COUNT = 7;
 
-        // Installation des anomalies
-        // De type model.environment.Pollution
-        map.activeAnomaly(5,5, Map.CaseType.Pollution);
-        map.activeAnomaly(6,5, Map.CaseType.Pollution);
-        map.activeAnomaly(5,4, Map.CaseType.Pollution);
-        map.activeAnomaly(3,5, Map.CaseType.Pollution);
+    private static final int STEPS = 800;   // 800 secondes simulées
+    private static final int SLEEP_MS = 0;  // 0 => très rapide
 
-        // De type model.environment.RestrictedArea
-        map.activeAnomaly(2,5, Map.CaseType.RestrictedArea);
-        map.activeAnomaly(25,6, Map.CaseType.RestrictedArea);
-        map.activeAnomaly(25,7, Map.CaseType.RestrictedArea);
+    public void run() throws InterruptedException {
 
-        // De type model.environment.Collapse
-        map.activeAnomaly(5,25, Map.CaseType.Collapse);
-        map.activeAnomaly(6,25, Map.CaseType.Collapse);
-        map.activeAnomaly(6,24, Map.CaseType.Collapse);
-        map.activeAnomaly(4,24, Map.CaseType.Collapse);
-        map.activeAnomaly(3,24, Map.CaseType.Collapse);
-        map.activeAnomaly(5,23, Map.CaseType.Collapse);
-    }
+        Position base = new Position(WIDTH / 2, HEIGHT / 2);
 
-    /**
-     * Lancement de l'application
-     * Affichage de la grille
-     * Puis, mise à jour de l'état de la map
-     * @param nbStep nombre d'étapes à parcourir
-     * @param timeBetweenStep délai entre chaque étape
-     */
-    public void run(int nbStep, int timeBetweenStep){
-        for(int step = 0;step<nbStep;step++){
-            Map.CaseType[][] grid = map.getState();
-            print(grid);
-            try {
-                Thread.sleep(timeBetweenStep);
-            }catch (InterruptedException e){
-                e.printStackTrace();
-            }
+        // Environnement réel (dynamique)
+        Map map = new Map(WIDTH, HEIGHT);
+
+        // Pour rendre le test visible, on active quelques anomalies au départ
+        map.activeAnomaly(3, 3, Map.CaseType.Pollution);
+        map.activeAnomaly(15, 10, Map.CaseType.Collapse);
+        map.activeAnomaly(10, 16, Map.CaseType.RestrictedArea);
+
+        // Centre (tau global)
+        ControlCenter center = new ControlCenter(WIDTH, HEIGHT);
+
+        // Drones
+        List<Drone> drones = new ArrayList<>();
+        Random masterRng = new Random(42);
+        for (int i = 0; i < DRONE_COUNT; i++) {
+            drones.add(new Drone(
+                    i,
+                    base,
+                    base,
+                    new Random(masterRng.nextLong()),
+                    WIDTH,
+                    HEIGHT
+            ));
+        }
+
+        // Simulation
+        for (int t = 0; t < STEPS; t++) {
+
+            // 1) Le monde évolue (anomalies dynamiques)
             map.step();
-        }
-    }
 
-    /**
-     * Affichage de l'état courant
-     * @param grid
-     */
-    public void print(Map.CaseType[][] grid){
-        for (int x=0;x<width;x++){
-            for (int y=0;y<height;y++){
-                System.out.print(
-                        grid[x][y]== Map.CaseType.EMPTY ?".":
-                        grid[x][y]== Map.CaseType.BASE?"|":
-                        grid[x][y]== Map.CaseType.Pollution?"P":
-                        grid[x][y]== Map.CaseType.Collapse?"C":"R");
-                System.out.print("\t");
+            for (Drone d : drones) {
+
+                // 2) Drone agit (utilise tauLocal)
+                d.step(WIDTH, HEIGHT);
+
+                // 3) Observation locale réelle (exploration de catastrophe)
+                int x = d.getPosition().getX();
+                int y = d.getPosition().getY();
+                Map.CaseType observed = map.isSafe(x, y);
+
+                // 4) Le drone réagit (analyse si anomalie)
+                d.observe(observed);
+
+                // 5) Upload anytime : le drone rapporte au centre
+                center.reportCell(x, y, observed);
+
+                // 6) Download only at base : sync tau uniquement à la base
+                if (d.getPosition().equals(base)) {
+                    d.syncTau(center.copyTau());
+                    System.out.println("[BASE] t=" + t + " drone=" + d.getId()
+                            + " sync tau | avgTau=" + String.format("%.2f", center.averageTau()));
+                }
             }
-            System.out.println();
+
+            // 7) Évaporation
+            center.evaporate();
+
+            // 8) Logs simples
+            if (t % 50 == 0) {
+                System.out.println("t=" + t + " avgTau=" + String.format("%.2f", center.averageTau())
+                        + " | d0=" + drones.get(0).getPosition() + " " + drones.get(0).getState());
+            }
+
+            if (SLEEP_MS > 0) Thread.sleep(SLEEP_MS);
         }
-        System.out.println("------------------------------------------------------------------------------");
+
+        System.out.println("Simulation terminée.");
     }
 }
