@@ -1,6 +1,9 @@
 package controller;
 
 import model.environment.Map;
+import model.world.World;
+import model.drone.Drone;
+
 
 
 public class SimulationController {
@@ -50,6 +53,37 @@ public class SimulationController {
             }
             map.step();
         }
+    }
+
+    public void runDronesDemo(int steps, long sleepMs) {
+        World world = new World(12345L);
+
+        System.out.println("=== Simulation Drones (demo) ===");
+        System.out.println("Grille: " + world.getWidth() + "x" + world.getHeight()
+                + " | Drones: " + world.getDrones().size());
+
+        for (int t = 1; t <= steps; t++) {
+            world.step();
+
+            System.out.println("\nTick " + t);
+            for (Drone d : world.getDrones()) {
+                System.out.println(" - D" + d.getId()
+                        + " | pos=" + d.getPosition()
+                        + " | etat=" + d.getState());
+            }
+
+            // Petite pause (temps réel) uniquement pour lire la console
+            if (sleepMs > 0) {
+                try {
+                    Thread.sleep(sleepMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+
+        System.out.println("\n=== Fin Simulation Drones (demo) ===");
     }
 
     /**
