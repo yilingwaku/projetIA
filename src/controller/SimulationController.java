@@ -8,6 +8,7 @@ import scenario.Scenario;
 import scenario.ScenarioFactory;
 import scenario.ScenarioId;
 import view.Renderer;
+import view.RendererSimulationSwing;
 
 
 import java.util.*;
@@ -41,6 +42,10 @@ public class SimulationController {
 
     private final Deque<String> eventLog = new ArrayDeque<>();
 
+
+    // Vue graphique de la simulation (affichage en temps réel de la carte, des drones et des anomalies)
+    private RendererSimulationSwing rendererSwing;
+
     public void run() throws InterruptedException {
 
         // Position de la base au milieu de MAP
@@ -69,8 +74,12 @@ public class SimulationController {
             ));
         }
 
-        // View
+        // View console
         Renderer renderer = new Renderer(WIDTH, HEIGHT, CLEAR_SCREEN);
+
+        //View graphique
+        int cellSize = 20; 
+        rendererSwing = new RendererSimulationSwing(WIDTH, HEIGHT, cellSize);
 
         // Boucle
         for (int t = 0; t < STEPS; t++) {
@@ -118,7 +127,8 @@ public class SimulationController {
 
             // RENDER ui
             if (t % RENDER_EVERY == 0) {
-                renderer.render(t, map, drones, base, center, eventLog, EVENT_LOG_SIZE);
+                renderer.render(t, map, drones, base, center, eventLog, EVENT_LOG_SIZE); // console
+                rendererSwing.render(t, map, drones, base, center, eventLog, EVENT_LOG_SIZE);  // graphique
             }
 
             if (SLEEP_MS > 0) Thread.sleep(SLEEP_MS);
