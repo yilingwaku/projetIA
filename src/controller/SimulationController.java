@@ -9,6 +9,9 @@ import scenario.ScenarioFactory;
 import scenario.ScenarioId;
 import view.Renderer;
 import view.RendererSimulationSwing;
+import test.Evaluator; 
+
+// ...
 
 
 import java.util.*;
@@ -21,6 +24,7 @@ import java.util.*;
  */
 public class SimulationController {
 
+    private Evaluator evaluator; 
     // GLOBAL CONFIG
     private static final int WIDTH = 30;
     private static final int HEIGHT = 30;
@@ -46,6 +50,7 @@ public class SimulationController {
     // Vue graphique de la simulation (affichage en temps réel de la carte, des drones et des anomalies)
     private RendererSimulationSwing rendererSwing;
 
+
     public void run() throws InterruptedException {
 
         // Position de la base au milieu de MAP
@@ -59,6 +64,7 @@ public class SimulationController {
         Scenario scenario = ScenarioFactory.create(SCENARIO_ID);
         scenario.apply(map, base, WIDTH, HEIGHT);
         pushEvent("[SCENARIO] " + scenario.name());
+
 
         // Model: drones
         List<Drone> drones = new ArrayList<>();
@@ -80,6 +86,8 @@ public class SimulationController {
         //View graphique
         int cellSize = 20; 
         rendererSwing = new RendererSimulationSwing(WIDTH, HEIGHT, cellSize);
+
+        evaluator = new Evaluator(WIDTH, HEIGHT);
 
         // Boucle
         for (int t = 0; t < STEPS; t++) {
@@ -122,6 +130,10 @@ public class SimulationController {
                 }
             }
 
+            // Mise à jour des métriques
+            evaluator.update(map, drones);
+
+
             // EVAPORATION GLOBALE
             center.evaporate();
 
@@ -133,6 +145,9 @@ public class SimulationController {
 
             if (SLEEP_MS > 0) Thread.sleep(SLEEP_MS);
         }
+
+        System.out.println("\n===== RAPPORT D'ÉVALUATION =====");
+        evaluator.printReport();
 
         System.out.println("Simulation terminée.");
     }
