@@ -27,10 +27,11 @@ public class RendererMapPanel extends JPanel {
         this.mapHeight = mapHeight;
         this.cellSize = cellSize;
 
+        int legendWidth = 150; // largeur réservée pour la légende
         setPreferredSize(new Dimension(
-                mapWidth * cellSize,
-                mapHeight * cellSize
-        ));
+            mapWidth * cellSize + legendWidth, 
+            mapHeight * cellSize));
+
         setBackground(Color.WHITE);
     }
 
@@ -57,6 +58,7 @@ public class RendererMapPanel extends JPanel {
         drawBase(g2);
         drawDrones(g2);
         drawTime(g2);
+        drawLegend(g2);
     }
 
     private void drawGrid(Graphics2D g) {
@@ -136,4 +138,46 @@ public class RendererMapPanel extends JPanel {
         g.setColor(Color.BLACK);
         g.drawString("t = " + time, 10, 15);
     }
+
+    private void drawLegend(Graphics2D g) {
+    int startX = mapWidth * cellSize + 10; // à droite de la grille
+    int startY = 20;
+    int boxSize = 15;
+    int lineHeight = 20;
+
+    // Liste des légendes
+    String[] labels = {
+            "Base",
+            "Pollution",
+            "Collapse",
+            "RestrictedArea",
+            "Drone ACTIVE",
+            "Drone ANALYZE",
+            "Drone RECHARGING"
+    };
+
+    Color[] colors = {
+            Color.BLUE,
+            new Color(120, 200, 120),
+            new Color(200, 80, 80),
+            new Color(255, 165, 0),
+            Color.CYAN,
+            Color.ORANGE,
+            Color.GRAY
+    };
+
+    g.setColor(Color.BLACK);
+    g.drawString("LÉGENDE :", startX, startY - 5);
+
+    for (int i = 0; i < labels.length; i++) {
+        g.setColor(colors[i]);
+        g.fillRect(startX, startY + i * lineHeight, boxSize, boxSize);
+
+        g.setColor(Color.BLACK);
+        g.drawRect(startX, startY + i * lineHeight, boxSize, boxSize);
+
+        g.drawString(labels[i], startX + boxSize + 5, startY + i * lineHeight + 12);
+    }
+}
+
 }
