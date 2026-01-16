@@ -4,94 +4,162 @@ import model.center.ControlCenter;
 import model.drone.Drone;
 import model.environment.Map;
 import model.shared.Position;
+import scenario.Scenario;
+import scenario.ScenarioFactory;
+import scenario.ScenarioId;
+import view.Renderer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
- * Test console complet (sans UI).
+ * SimulationController
+ * Choisir scenario, creer models, execute la programmation
+ * - Scenario pour initialization de MAP
+ * - Renderer pour UI
  */
 public class SimulationController {
 
-    private static final int WIDTH = 20;
-    private static final int HEIGHT = 20;
+    // GLOBAL CONFIG
+    private static final int WIDTH = 30;
+    private static final int HEIGHT = 30;
     private static final int DRONE_COUNT = 7;
 
-    private static final int STEPS = 800;   // 800 secondes simulées
-    private static final int SLEEP_MS = 0;  // 0 => très rapide
+    // Pour simuler RETURNING + RECHARGING
+    private static final int STEPS = 2600;
+
+    private static final int SLEEP_MS = 80;          // 0
+    private static final int RENDER_EVERY = 1;     // render chaque 1 seconds
+    private static final boolean CLEAR_SCREEN = true;
+    private static final int EVENT_LOG_SIZE = 14;
+
+    // Choix de scenario
+//    private static final ScenarioId SCENARIO_ID = ScenarioId.S0_UI;
+    private static final ScenarioId SCENARIO_ID = ScenarioId.S1_ANALYZE;
+
+    // =============================================
+
+    private final Deque<String> eventLog = new ArrayDeque<>();
 
     public void run() throws InterruptedException {
 
+        // Position de la base au milieu de MAP
         Position base = new Position(WIDTH / 2, HEIGHT / 2);
 
-        // Environnement réel (dynamique)
+        // Environment + control center
         Map map = new Map(WIDTH, HEIGHT);
-
-        // Pour rendre le test visible, on active quelques anomalies au départ
-        map.activeAnomaly(3, 3, Map.CaseType.Pollution);
-        map.activeAnomaly(15, 10, Map.CaseType.Collapse);
-        map.activeAnomaly(10, 16, Map.CaseType.RestrictedArea);
-
-        // Centre (tau global)
         ControlCenter center = new ControlCenter(WIDTH, HEIGHT);
 
-        // Drones
+        // Scenario
+        Scenario scenario = ScenarioFactory.create(SCENARIO_ID);
+        scenario.apply(map, base, WIDTH, HEIGHT);
+        pushEvent("[SCENARIO] " + scenario.name());
+
+        // Model: drones
         List<Drone> drones = new ArrayList<>();
-        Random masterRng = new Random(42);
+        Random master = new Random(42);
         for (int i = 0; i < DRONE_COUNT; i++) {
             drones.add(new Drone(
                     i,
                     base,
                     base,
-                    new Random(masterRng.nextLong()),
+                    new Random(master.nextLong()),
                     WIDTH,
                     HEIGHT
             ));
         }
 
-        // Simulation
+        // View
+        Renderer renderer = new Renderer(WIDTH, HEIGHT, CLEAR_SCREEN);
+
+        // Boucle
         for (int t = 0; t < STEPS; t++) {
 
-            // 1) Le monde évolue (anomalies dynamiques)
+            // WORLD STEP
             map.step();
 
+            // DRONES STEP
             for (Drone d : drones) {
 
-                // 2) Drone agit (utilise tauLocal)
+                Drone.DroneState before = d.getState();
+
+                // Deplacement de drone
                 d.step(WIDTH, HEIGHT);
 
-                // 3) Observation locale réelle (exploration de catastrophe)
                 int x = d.getPosition().getX();
                 int y = d.getPosition().getY();
+
+                // Observation
                 Map.CaseType observed = map.isSafe(x, y);
 
-                // 4) Le drone réagit (analyse si anomalie)
+                // Reaction: S'il y a un anomaly alors ACTIVE => ANALYZE
                 d.observe(observed);
 
-                // 5) Upload anytime : le drone rapporte au centre
+                // Renvoyer l'information au centre
                 center.reportCell(x, y, observed);
 
-                // 6) Download only at base : sync tau uniquement à la base
+                // Si drone retoure a la base , il met a jour la pheromone grobale
                 if (d.getPosition().equals(base)) {
                     d.syncTau(center.copyTau());
-                    System.out.println("[BASE] t=" + t + " drone=" + d.getId()
-                            + " sync tau | avgTau=" + String.format("%.2f", center.averageTau()));
+                    pushEvent("[BASE SYNC] t=" + t + " d" + d.getId()
+                            + " avgTau=" + fmt(center.averageTau()));
+                }
+
+                // Changer evenements
+                Drone.DroneState after = d.getState();
+                if (after != before) {
+                    String msg = buildStateChangeMsg(t, d, before, after, observed);
+                    if (!msg.isEmpty()) pushEvent(msg);
                 }
             }
 
-            // 7) Évaporation
+            // EVAPORATION GLOBALE
             center.evaporate();
 
-            // 8) Logs simples
-            if (t % 50 == 0) {
-                System.out.println("t=" + t + " avgTau=" + String.format("%.2f", center.averageTau())
-                        + " | d0=" + drones.get(0).getPosition() + " " + drones.get(0).getState());
+            // RENDER ui
+            if (t % RENDER_EVERY == 0) {
+                renderer.render(t, map, drones, base, center, eventLog, EVENT_LOG_SIZE);
             }
 
             if (SLEEP_MS > 0) Thread.sleep(SLEEP_MS);
         }
 
         System.out.println("Simulation terminée.");
+    }
+
+
+    private void pushEvent(String s) {
+        eventLog.addLast(s);
+        while (eventLog.size() > EVENT_LOG_SIZE) eventLog.removeFirst();
+    }
+
+    private static String buildStateChangeMsg(int t, Drone d,
+                                              Drone.DroneState before,
+                                              Drone.DroneState after,
+                                              Map.CaseType observed) {
+
+        String pos = d.getPosition().toString();
+
+        if (after == Drone.DroneState.ANALYZE) {
+            return "[DETECT] t=" + t + " d" + d.getId()
+                    + " détecte " + observed + " à " + pos + " -> ANALYZE (10s)";
+        } else if (after == Drone.DroneState.RETURNING) {
+            return "[RETURN] t=" + t + " d" + d.getId()
+                    + " -> RETURNING | remaining=" + d.getRemainingActiveSec() + "s";
+        } else if (after == Drone.DroneState.RECHARGING) {
+            return "[RECHARGE] t=" + t + " d" + d.getId()
+                    + " -> RECHARGING (600s)";
+        } else if (after == Drone.DroneState.ACTIVE && before == Drone.DroneState.RECHARGING) {
+            return "[READY] t=" + t + " d" + d.getId()
+                    + " recharge terminée -> ACTIVE";
+        } else if (after == Drone.DroneState.ACTIVE && before == Drone.DroneState.ANALYZE) {
+            return "[ANALYZE END] t=" + t + " d" + d.getId()
+                    + " analyse terminée -> ACTIVE";
+        }
+
+        return "";
+    }
+
+    private static String fmt(double v) {
+        return String.format(java.util.Locale.US, "%.2f", v);
     }
 }

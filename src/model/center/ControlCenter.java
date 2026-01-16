@@ -31,7 +31,7 @@ public class ControlCenter {
     }
 
     /**
-     * Upload anytime : le drone signale ce qu'il observe.
+     * le drone signale ce qu'il observe.
      * On dépose plus de phéromone si c'est une anomalie.
      */
     public void reportCell(int x, int y, Map.CaseType observed) {
@@ -59,7 +59,7 @@ public class ControlCenter {
 
     /**
      * Download only at base : copie de tau.
-     * IMPORTANT : appeler uniquement à la base.
+     * Appeler uniquement à la base.
      */
     public double[][] copyTau() {
         double[][] copy = new double[width][height];
@@ -69,7 +69,7 @@ public class ControlCenter {
         return copy;
     }
 
-    /** Debug */
+    // La moyenne de pheromone
     public double averageTau() {
         double sum = 0.0;
         for (int x = 0; x < width; x++) {

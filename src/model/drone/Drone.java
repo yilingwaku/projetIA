@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Drone final :
- * - 1 step = 1 seconde simulée
- * - ACO minimal : choix probabiliste basé sur tauLocal
- * - Upload anytime / Download only at base : tauLocal synchronisé uniquement à la base
- * - Exploration de catastrophe : observe Map.CaseType sur sa cellule, déclenche ANALYZE si anomalie
+ * Drone :
+ * 1 step = 1 seconde simulée
+ * ACO minimal : choix probabiliste basé sur tauLocal
+ * Upload anytime / Download only at base : tauLocal synchronisé uniquement à la base
+ * Exploration  : observe Map.CaseType sur sa cellule, déclenche ANALYZE
  */
 public class Drone {
 
@@ -27,13 +27,13 @@ public class Drone {
     private static final int MAX_ACTIVE_TIME_SEC = 30 * 60; // 1800
     private static final int RECHARGE_TIME_SEC = 10 * 60;   // 600
     private static final int ANALYZE_TIME_SEC = 10;         // 10
-    private static final int SAFETY_MARGIN_SEC = 30;
+    private static final int SAFETY_MARGIN_SEC = 60;
 
     private int activeElapsedSec;
     private int rechargeRemainingSec;
     private int analyzeRemainingSec;
 
-    // ACO minimal : phéromones locales
+    // ACO minimal
     private final double[][] tauLocal;
     private static final double INITIAL_TAU = 1.0;
 
@@ -75,18 +75,26 @@ public class Drone {
 
     public DroneState getState() { return state; }
 
-    // ===== Communication (download only at base) =====
 
+    public int getAnalyzeRemainingSec() {
+        return analyzeRemainingSec;
+    }
+
+    public int getRechargeRemainingSec() {
+        return rechargeRemainingSec;
+    }
+
+
+    // Communication et synchronisation
     public void syncTau(double[][] globalTau) {
         for (int x = 0; x < tauLocal.length; x++) {
             System.arraycopy(globalTau[x], 0, tauLocal[x], 0, tauLocal[0].length);
         }
     }
 
-    // ===== Observation locale (capteur) =====
 
     /**
-     * Appelé par la simulation : le drone observe uniquement sa cellule.
+     * le drone observe uniquement sa position.
      * Si anomalie => déclenche ANALYZE (10s).
      */
     public void observe(Map.CaseType observed) {
@@ -101,12 +109,12 @@ public class Drone {
         }
     }
 
-    // ===== Step =====
+    // Step
 
     public void step(int width, int height) {
         switch (state) {
             case ACTIVE -> stepActive(width, height);
-            case ANALYZE -> stepAnalyze();
+            case ANALYZE -> stepAnalyze(width,height);
             case RETURNING -> stepReturning(width, height);
             case RECHARGING -> stepRecharging();
         }
@@ -116,25 +124,28 @@ public class Drone {
         position = chooseNextMoveACO(width, height);
         activeElapsedSec++;
 
-        // Vérification retour anticipé
+        // Vérification retour
         if (getRemainingActiveSec() <= estimatedReturnTimeSec() + SAFETY_MARGIN_SEC) {
             state = DroneState.RETURNING;
         }
     }
 
-    private void stepAnalyze() {
+    private void stepAnalyze(int width, int height) {
         activeElapsedSec++;
         analyzeRemainingSec--;
 
         if (analyzeRemainingSec <= 0) {
             analyzeRemainingSec = 0;
+
             if (getRemainingActiveSec() <= estimatedReturnTimeSec() + SAFETY_MARGIN_SEC) {
                 state = DroneState.RETURNING;
             } else {
                 state = DroneState.ACTIVE;
+                position = chooseNextMoveACO(width, height);
             }
         }
     }
+
 
     private void stepReturning(int width, int height) {
         if (position.equals(basePosition)) {
@@ -172,7 +183,7 @@ public class Drone {
         }
     }
 
-    // ===== ACO minimal =====
+    // ACO
 
     private Position chooseNextMoveACO(int width, int height) {
         int x = position.getX();
@@ -197,15 +208,15 @@ public class Drone {
             if (acc >= r) return p;
         }
 
-        return neighbors.get(0);
+        return neighbors.getFirst();
     }
 
-    // ===== Helpers =====
 
-    private int getRemainingActiveSec() {
+    public int getRemainingActiveSec() {
         return Math.max(0, MAX_ACTIVE_TIME_SEC - activeElapsedSec);
     }
 
+    // En utilisant la distance manhattan pour estimer le temps de retour
     private int estimatedReturnTimeSec() {
         return Math.abs(position.getX() - basePosition.getX())
                 + Math.abs(position.getY() - basePosition.getY());
