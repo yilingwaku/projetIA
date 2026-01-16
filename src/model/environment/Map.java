@@ -1,6 +1,8 @@
+package model.environment;
+
 public class Map {
     private final int width,height;
-    // Contient les trois types d'anomalie (Pollution, Décombres, Zone interdite)
+    // Contient les trois types d'anomalie (model.environment.Pollution, Décombres, Zone interdite)
     private Anomaly[] anomalies;
 
     public enum CaseType{

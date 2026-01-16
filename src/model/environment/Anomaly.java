@@ -1,3 +1,5 @@
+package model.environment;
+
 public abstract class Anomaly {
     // Présence de l'anomalie
     protected boolean[][] grid;
