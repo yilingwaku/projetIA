@@ -39,8 +39,13 @@ public class SimulationController {
     private static final int EVENT_LOG_SIZE = 14;
 
     // Choix de scenario
-//    private static final ScenarioId SCENARIO_ID = ScenarioId.S0_UI;
-    private static final ScenarioId SCENARIO_ID = ScenarioId.S1_ANALYZE;
+//    private static final ScenarioId SCENARIO_ID = ScenarioId.S0_COUVERTURE;
+//    private static final ScenarioId SCENARIO_ID = ScenarioId.S1_DETECTION;
+    private static final ScenarioId SCENARIO_ID = ScenarioId.S2_COORDINATION;
+//    private static final ScenarioId SCENARIO_ID = ScenarioId.S4_ANALYZE;
+
+
+//    private static final ScenarioId SCENARIO_ID = ScenarioId.S4_ANALYZE;
 
     // =============================================
 
@@ -114,6 +119,8 @@ public class SimulationController {
 
                 // Renvoyer l'information au centre
                 center.reportCell(x, y, observed);
+                // EVAPORATION GLOBALE
+                center.evaporate();
 
                 // Si drone retoure a la base , il met a jour la pheromone grobale
                 if (d.getPosition().equals(base)) {
@@ -134,14 +141,11 @@ public class SimulationController {
             evaluator.update(map, drones);
 
 
-            // EVAPORATION GLOBALE
-            center.evaporate();
+
 
             // RENDER ui
-            if (t % RENDER_EVERY == 0) {
-                renderer.render(t, map, drones, base, center, eventLog, EVENT_LOG_SIZE); // console
-                rendererSwing.render(t, map, drones, base, center, eventLog, EVENT_LOG_SIZE);  // graphique
-            }
+            renderer.render(t, map, drones, base, center, eventLog, EVENT_LOG_SIZE); // console
+            rendererSwing.render(t, map, drones, base, center, eventLog, EVENT_LOG_SIZE);  // graphique
 
             if (SLEEP_MS > 0) Thread.sleep(SLEEP_MS);
         }
