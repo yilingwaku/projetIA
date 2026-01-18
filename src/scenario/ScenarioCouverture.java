@@ -3,10 +3,10 @@ package scenario;
 import model.environment.Map;
 import model.shared.Position;
 
-public class ScenarioUI implements Scenario {
+public class ScenarioCouverture implements Scenario {
 
     @Override
-    public String name() { return "S0_UI"; }
+    public String name() { return "S0_COUVERTURE"; }
 
     @Override
     public void apply(Map map, Position base, int width, int height) {
