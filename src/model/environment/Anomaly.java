@@ -46,4 +46,14 @@ public abstract class Anomaly {
     }
 
     public abstract Map.CaseType getType();
+    public int getNbAnomalies(){
+        int result = 0;
+        for(boolean[] l : grid){
+            for(boolean val : l) {
+                if(val)
+                    result++;
+            }
+        }
+        return result;
+    }
 }

@@ -42,6 +42,7 @@ public class Drone {
     private int activeElapsedSec;
     private int rechargeRemainingSec;
     private int analyzeRemainingSec;
+    private int nbAnomaliesAnalysed = 0;
 
     // ACO pheromone
     private final double[][] tauLocal;
@@ -155,12 +156,17 @@ public class Drone {
         analyzeRemainingSec--;
         if (analyzeRemainingSec <= 0) {
             analyzeRemainingSec = 0;
+            nbAnomaliesAnalysed++;
             if (getRemainingActiveSec() <= estimatedReturnTimeSec() + SAFETY_MARGIN_SEC) {
                 state = DroneState.RETURNING;
             } else {
                 state = DroneState.ACTIVE;
             }
         }
+    }
+
+    public int getNbAnomaliesAnalysed(){
+        return nbAnomaliesAnalysed;
     }
 
     private void stepReturning(int width, int height) {

@@ -5,4 +5,5 @@ public enum ScenarioId {
     S1_DETECTION,
     S2_COORDINATION,
     S4_ANALYZE,
+    S5_RESULTFIX
 }

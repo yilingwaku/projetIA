@@ -106,4 +106,8 @@ public class Map {
         anomalies[1] = collapse;
         anomalies[2] = restrictedArea;
     }
+
+    public int getAnomaliesAnalysed(){
+        return anomalies[0].getNbAnomalies() + anomalies[1].getNbAnomalies() + anomalies[2].getNbAnomalies();
+    }
 }

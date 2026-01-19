@@ -20,6 +20,8 @@ public class RendererMapPanel extends JPanel {
     private double coveragePercent = 0.0;
     private int visitedCount = 0;
     private int totalCells = 0;
+    private int nbAnomalies = -1;
+    private int nbAnomaliesVisited = -1;
 
 
     private int time;
@@ -57,6 +59,26 @@ public class RendererMapPanel extends JPanel {
         this.totalCells = totalCells;
     }
 
+    public void updateState(int time,
+                            Map map,
+                            List<Drone> drones,
+                            Position base,
+                            double coveragePercent,
+                            int visitedCount,
+                            int totalCells,
+                            int nbAnomalies,
+                            int nbAnomaliesVisited) {
+        this.time = time;
+        this.map = map;
+        this.drones = drones;
+        this.base = base;
+
+        this.coveragePercent = coveragePercent;
+        this.visitedCount = visitedCount;
+        this.totalCells = totalCells;
+        this.nbAnomalies = nbAnomalies;
+        this.nbAnomaliesVisited = nbAnomaliesVisited;
+    }
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -207,6 +229,10 @@ public class RendererMapPanel extends JPanel {
 
         g.drawString(String.format(java.util.Locale.US,
                 "Visitées : %d / %d", visitedCount, totalCells), startX, startY + 40);
+
+        if(nbAnomalies != -1)
+            g.drawString(String.format(java.util.Locale.US,
+                "Anomalies analysées : %d / %d", nbAnomalies, nbAnomaliesVisited), startX, startY + 60);
     }
 
 }
