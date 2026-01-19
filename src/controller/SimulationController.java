@@ -33,7 +33,7 @@ public class SimulationController {
     // Pour simuler RETURNING + RECHARGING
     private static final int STEPS = 2600;
 
-    private static final int SLEEP_MS = 80;          //
+    private static final int SLEEP_MS = 100;          // 0
     private static final boolean CLEAR_SCREEN = true;
     private static final int EVENT_LOG_SIZE = 14;
     private static final int WORLD_STEP = 150;
@@ -100,7 +100,6 @@ public class SimulationController {
         for (int t = 0; t < STEPS; t++) {
 
             // WORLD STEP
-//            map.step();
             if (t %  WORLD_STEP == 0) {
                 map.step();
             }
