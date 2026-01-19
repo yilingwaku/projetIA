@@ -8,7 +8,7 @@ import java.util.Random;
 public class ScenarioAnalyze implements Scenario {
 
     @Override
-    public String name() { return "S1_ANALYZE"; }
+    public String name() { return "S4_ANALYZE"; }
 
     @Override
     public void apply(Map map, Position base, int width, int height) {
@@ -27,7 +27,7 @@ public class ScenarioAnalyze implements Scenario {
         addAnomaly(map, 25, 7, Map.CaseType.Collapse, width, height);
 
 
-        // Restricted: many static points
+        // Restricted
         Random r = new Random(123);
         int target = 30;
         int placed = 0;
