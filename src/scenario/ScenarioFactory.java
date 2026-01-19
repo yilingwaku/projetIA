@@ -7,6 +7,7 @@ public class ScenarioFactory {
             case S1_DETECTION -> new ScenarioDetection();
             case S2_COORDINATION -> new ScenarioCoordination();
             case S4_ANALYZE -> new ScenarioAnalyze();
+            case S5_RESULTFIX -> new ScenarioResultFix();
         };
     }
 }

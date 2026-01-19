@@ -37,13 +37,15 @@ public class SimulationController {
     private static final boolean CLEAR_SCREEN = true;
     private static final int EVENT_LOG_SIZE = 14;
     private static final int WORLD_STEP = 150;
+    private final boolean RESULT_ANOMALY = true;
 
 
     // Choix de scenario
 //    private static final ScenarioId SCENARIO_ID = ScenarioId.S0_COUVERTURE;
 //    private static final ScenarioId SCENARIO_ID = ScenarioId.S1_DETECTION;
 //    private static final ScenarioId SCENARIO_ID = ScenarioId.S2_COORDINATION;
-    private static final ScenarioId SCENARIO_ID = ScenarioId.S4_ANALYZE;
+//    private static final ScenarioId SCENARIO_ID = ScenarioId.S4_ANALYZE;
+    private static final ScenarioId SCENARIO_ID = ScenarioId.S5_RESULTFIX;
 
 
 //    private static final ScenarioId SCENARIO_ID = ScenarioId.S4_ANALYZE;
@@ -150,7 +152,14 @@ public class SimulationController {
 
             // RENDER ui
             renderer.render(t, map, drones, base, center, eventLog, EVENT_LOG_SIZE); // console
-            rendererSwing.render(t, map, drones, base, center, eventLog, EVENT_LOG_SIZE, cov, visited, total);   // graphique
+            if (RESULT_ANOMALY){
+                int result = 0;
+                for (Drone d : drones)
+                    result += d.getNbAnomaliesAnalysed();
+                rendererSwing.render(t, map, drones, base, center, eventLog, EVENT_LOG_SIZE, cov, visited, total, result,map.getAnomaliesAnalysed());   // graphique
+            } else {
+                rendererSwing.render(t, map, drones, base, center, eventLog, EVENT_LOG_SIZE, cov, visited, total);   // graphique
+            }
 
             if (SLEEP_MS > 0) Thread.sleep(SLEEP_MS);
         }
@@ -197,4 +206,5 @@ public class SimulationController {
     private static String fmt(double v) {
         return String.format(java.util.Locale.US, "%.2f", v);
     }
+
 }
