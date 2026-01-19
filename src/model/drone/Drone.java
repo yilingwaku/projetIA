@@ -15,7 +15,6 @@ import java.util.Random;
  *  Extensions pratiques :
  *      avec probabilité Q0 → exploitation (on choisit le meilleur voisin)
  *      sinon → exploration (tirage probabiliste)
- *
  *    le drone ne reçoit la phéromone globale QUE lorsqu’il revient à la base
  */
 public class Drone {
@@ -30,7 +29,7 @@ public class Drone {
     private static final double ALPHA = 4.0; // importance of pheromone
     private static final double BETA  = 0.3; // importance of heuristic
 
-    private static final double Q0 = 0.2; // 0.7~0.95 常用，越大越“优先走高tau”
+    private static final double Q0 = 0.8;
 
     private final Random rng;
 
@@ -123,7 +122,7 @@ public class Drone {
 
         state = DroneState.ANALYZE;
         analyzeRemainingSec = ANALYZE_TIME_SEC;
-        lastAnalyzedPos = position; // 记住这次分析的位置
+        lastAnalyzedPos = position;
     }
 
 

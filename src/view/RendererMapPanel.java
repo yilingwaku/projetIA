@@ -17,6 +17,11 @@ public class RendererMapPanel extends JPanel {
     private final int mapHeight;
     private final int cellSize;
 
+    private double coveragePercent = 0.0;
+    private int visitedCount = 0;
+    private int totalCells = 0;
+
+
     private int time;
     private Map map;
     private List<Drone> drones;
@@ -38,12 +43,20 @@ public class RendererMapPanel extends JPanel {
     public void updateState(int time,
                             Map map,
                             List<Drone> drones,
-                            Position base) {
+                            Position base,
+                            double coveragePercent,
+                            int visitedCount,
+                            int totalCells) {
         this.time = time;
         this.map = map;
         this.drones = drones;
         this.base = base;
+
+        this.coveragePercent = coveragePercent;
+        this.visitedCount = visitedCount;
+        this.totalCells = totalCells;
     }
+
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -59,6 +72,8 @@ public class RendererMapPanel extends JPanel {
         drawDrones(g2);
         drawTime(g2);
         drawLegend(g2);
+        drawStats(g2);
+
     }
 
     private void drawGrid(Graphics2D g) {
@@ -177,7 +192,21 @@ public class RendererMapPanel extends JPanel {
         g.drawRect(startX, startY + i * lineHeight, boxSize, boxSize);
 
         g.drawString(labels[i], startX + boxSize + 5, startY + i * lineHeight + 12);
+        }
+
     }
-}
+    private void drawStats(Graphics2D g) {
+        int startX = mapWidth * cellSize + 10;
+        int startY = 20 + 8 * 20;
+
+        g.setColor(Color.BLACK);
+        g.drawString("STATS :", startX, startY);
+
+        g.drawString(String.format(java.util.Locale.US,
+                "Couverture : %.2f%%", coveragePercent), startX, startY + 20);
+
+        g.drawString(String.format(java.util.Locale.US,
+                "Visitées : %d / %d", visitedCount, totalCells), startX, startY + 40);
+    }
 
 }

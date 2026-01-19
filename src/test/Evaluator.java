@@ -1,27 +1,27 @@
 package test;
 
 import model.drone.Drone;
-import model.environment.Map;  
 import model.shared.Position;
 
-import java.util.*; 
+import java.util.*;
 
 public class Evaluator {
 
     private final int width;
     private final int height;
 
-    // Statistiques pour l'ensemble des drones
+    // Statistiques globales
     private int totalCollisions = 0;
     private int totalAnomaliesDetected = 0;
     private int totalAnalysisTime = 0;
+
+    // Couverture
     private double coverage = 0.0;
+    private final boolean[][] visited;
+    private int visitedCount = 0;  // <- NEW: compteur incrémental
 
     // Statistiques par drone
-    private final java.util.Map<Integer, DroneStats> droneStats; // <--- explicitement java.util.Map
-
-    // Pour la couverture (pourcentage de cases visitées)
-    private final boolean[][] visited;
+    private final java.util.Map<Integer, DroneStats> droneStats;
 
     public Evaluator(int width, int height) {
         this.width = width;
@@ -30,7 +30,6 @@ public class Evaluator {
         this.visited = new boolean[width][height];
     }
 
-    // Pour l'évaluation des stats (collisions, anomalie détectées, temps d'analyse)
     public static class DroneStats {
         public int collisions = 0;
         public int anomaliesDetected = 0;
@@ -42,6 +41,8 @@ public class Evaluator {
         for (Drone d : drones) {
             DroneStats stats = droneStats.computeIfAbsent(d.getId(), k -> new DroneStats());
 
+            // NOTE: ici tu comptes "ANALYZE" chaque step.
+            // Cela mesure plutôt "temps passé en analyse" que "nombre d'anomalies uniques".
             if (d.getState() == Drone.DroneState.ANALYZE) {
                 stats.anomaliesDetected++;
                 stats.analysisTime++;
@@ -49,6 +50,7 @@ public class Evaluator {
                 totalAnalysisTime++;
             }
 
+            // Collisions (attention: double comptage possible, mais on ne change pas ici)
             for (Drone other : drones) {
                 if (d.getId() != other.getId() && d.getPosition().equals(other.getPosition())) {
                     stats.collisions++;
@@ -56,25 +58,40 @@ public class Evaluator {
                 }
             }
 
+            // Couverture: incrémental
             Position pos = d.getPosition();
-            if (!visited[pos.getX()][pos.getY()]) {
-                visited[pos.getX()][pos.getY()] = true;
+            int x = pos.getX();
+            int y = pos.getY();
+
+            if (x >= 0 && x < width && y >= 0 && y < height) {
+                if (!visited[x][y]) {
+                    visited[x][y] = true;
+                    visitedCount++; // <- NEW
+                }
             }
         }
 
-        int visitedCount = 0;
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                if (visited[x][y]) visitedCount++;
-            }
-        }
         coverage = 100.0 * visitedCount / (width * height);
     }
 
-    // Affichage des stats
+    // ===== Getters pour affichage temps réel =====
+    public double getCoverage() {
+        return coverage;
+    }
+
+    public int getVisitedCount() {
+        return visitedCount;
+    }
+
+    public int getTotalCells() {
+        return width * height;
+    }
+
+    // Affichage du rapport final
     public void printReport() {
         System.out.println("===== EVALUATION =====");
-        System.out.printf("Couverture : %.2f%%\n", coverage);
+        System.out.printf(java.util.Locale.US, "Couverture : %.2f%% (%d/%d)\n",
+                coverage, visitedCount, width * height);
         System.out.println("Collisions : " + totalCollisions);
         System.out.println("Anomalies détectées : " + totalAnomaliesDetected);
         System.out.println("Temps total en analyse : " + totalAnalysisTime + "s");

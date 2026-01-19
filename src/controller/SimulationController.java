@@ -33,16 +33,17 @@ public class SimulationController {
     // Pour simuler RETURNING + RECHARGING
     private static final int STEPS = 2600;
 
-    private static final int SLEEP_MS = 80;          // 0
-    private static final int RENDER_EVERY = 1;     // render chaque 1 seconds
+    private static final int SLEEP_MS = 80;          //
     private static final boolean CLEAR_SCREEN = true;
     private static final int EVENT_LOG_SIZE = 14;
+    private static final int WORLD_STEP = 150;
+
 
     // Choix de scenario
 //    private static final ScenarioId SCENARIO_ID = ScenarioId.S0_COUVERTURE;
 //    private static final ScenarioId SCENARIO_ID = ScenarioId.S1_DETECTION;
-    private static final ScenarioId SCENARIO_ID = ScenarioId.S2_COORDINATION;
-//    private static final ScenarioId SCENARIO_ID = ScenarioId.S4_ANALYZE;
+//    private static final ScenarioId SCENARIO_ID = ScenarioId.S2_COORDINATION;
+    private static final ScenarioId SCENARIO_ID = ScenarioId.S4_ANALYZE;
 
 
 //    private static final ScenarioId SCENARIO_ID = ScenarioId.S4_ANALYZE;
@@ -94,11 +95,16 @@ public class SimulationController {
 
         evaluator = new Evaluator(WIDTH, HEIGHT);
 
+
         // Boucle
         for (int t = 0; t < STEPS; t++) {
 
             // WORLD STEP
-            map.step();
+//            map.step();
+            if (t %  WORLD_STEP == 0) {
+                map.step();
+            }
+
 
             // DRONES STEP
             for (Drone d : drones) {
@@ -139,13 +145,13 @@ public class SimulationController {
 
             // Mise à jour des métriques
             evaluator.update(map, drones);
-
-
-
+            double cov = evaluator.getCoverage();
+            int visited = evaluator.getVisitedCount();
+            int total = evaluator.getTotalCells();
 
             // RENDER ui
             renderer.render(t, map, drones, base, center, eventLog, EVENT_LOG_SIZE); // console
-            rendererSwing.render(t, map, drones, base, center, eventLog, EVENT_LOG_SIZE);  // graphique
+            rendererSwing.render(t, map, drones, base, center, eventLog, EVENT_LOG_SIZE, cov, visited, total);   // graphique
 
             if (SLEEP_MS > 0) Thread.sleep(SLEEP_MS);
         }

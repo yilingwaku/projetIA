@@ -37,11 +37,13 @@ public class RendererSimulationSwing extends JFrame {
                        Position base,
                        ControlCenter center,
                        Deque<String> eventLog,
-                       int eventLogSize) {
-        // Mettre à jour l'état de la carte et des drones
-        mapPanel.updateState(t, map, drones, base);
+                       int eventLogSize,
+                       double coveragePercent,
+                       int visitedCount,
+                       int totalCells) {
 
-        // Redessiner
+        mapPanel.updateState(t, map, drones, base, coveragePercent, visitedCount, totalCells);
         mapPanel.repaint();
     }
+
 }
